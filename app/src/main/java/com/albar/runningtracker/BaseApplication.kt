@@ -6,7 +6,7 @@ import timber.log.Timber
 
 // compile time Injected
 @HiltAndroidApp
-class BaseApplication : Application() {
+open class BaseApplication : Application() {
 
     // Creating timber
     override fun onCreate() {
