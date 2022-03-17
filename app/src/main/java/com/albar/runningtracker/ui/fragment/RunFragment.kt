@@ -85,7 +85,6 @@ class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
