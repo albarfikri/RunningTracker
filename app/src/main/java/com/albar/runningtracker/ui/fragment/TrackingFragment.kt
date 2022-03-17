@@ -1,13 +1,14 @@
 package com.albar.runningtracker.ui.fragment
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.albar.runningtracker.R
 import com.albar.runningtracker.databinding.FragmentTrackingBinding
+import com.albar.runningtracker.service.TrackingService
 import com.albar.runningtracker.ui.viewmodels.MainViewModel
 import com.google.android.gms.maps.GoogleMap
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,7 +39,17 @@ class TrackingFragment : Fragment() {
         binding.mapView.getMapAsync {
             map = it
         }
+
+        binding.btnToggleRun.setOnClickListener{
+            sendCommandToService("ACTION_PAUSE_SERVICE")
+        }
     }
+
+    private fun sendCommandToService(action: String) =
+        Intent(requireContext(), TrackingService::class.java).also {
+            it.action = action
+            requireContext().startService(it)
+        }
 
     override fun onResume() {
         super.onResume()
