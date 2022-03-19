@@ -41,7 +41,7 @@ class TrackingFragment : Fragment() {
         }
 
         binding.btnToggleRun.setOnClickListener{
-            sendCommandToService("ACTION_PAUSE_SERVICE")
+            sendCommandToService("ACTION_START_OR_RESUME_SERVICE")
         }
     }
 
