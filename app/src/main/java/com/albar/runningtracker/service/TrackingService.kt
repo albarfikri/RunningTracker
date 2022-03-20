@@ -36,7 +36,7 @@ import com.google.android.gms.maps.model.LatLng
 import timber.log.Timber
 
 typealias Polyline = MutableList<LatLng>
-typealias  Polylines = MutableList<Polyline>
+typealias Polylines = MutableList<Polyline>
 
 class TrackingService : LifecycleService() {
 
@@ -74,11 +74,13 @@ class TrackingService : LifecycleService() {
                         startForegroundService()
                         isFirstRun = false
                     } else {
+                        startForegroundService()
                         Timber.d("Resuming Service")
                     }
                 }
                 ACTION_PAUSE_SERVICE -> {
                     Timber.d("Paused service")
+                    pauseService()
                 }
                 ACTION_STOP_SERVICE -> {
                     Timber.d("Stopped service")
@@ -86,6 +88,10 @@ class TrackingService : LifecycleService() {
             }
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun pauseService() {
+        isTracking.postValue(false)
     }
 
     private fun startForegroundService() {
@@ -137,24 +143,6 @@ class TrackingService : LifecycleService() {
         pathPoints.postValue(mutableListOf())
     }
 
-    // add emptyPolylines
-    private fun addEmptyPolyline() = pathPoints.value?.apply {
-        add(mutableListOf())
-        pathPoints.postValue(this)
-    }
-        ?: pathPoints.postValue(mutableListOf(mutableListOf())) // inside 1 add coordinate, second mutablelistof add polyline
-
-    // function to add coordinate on the last coordinate list
-    private fun addPathPoint(location: Location?) {
-        location?.let {
-            val pos = LatLng(location.latitude, location.longitude)
-            pathPoints.value?.apply {
-                last().add(pos)
-                pathPoints.postValue(this)
-            }
-        }
-    }
-
     @SuppressLint("MissingPermission")
     private fun updateLocationTracking(isTracking: Boolean) {
         if (isTracking) {
@@ -173,6 +161,24 @@ class TrackingService : LifecycleService() {
             }
         } else {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    // add emptyPolylines
+    private fun addEmptyPolyline() = pathPoints.value?.apply {
+        add(mutableListOf())
+        pathPoints.postValue(this)
+    }
+        ?: pathPoints.postValue(mutableListOf(mutableListOf())) // inside 1 add coordinate, second mutablelistof add polyline
+
+    // function to add coordinate on the last coordinate list
+    private fun addPathPoint(location: Location?) {
+        location?.let {
+            val pos = LatLng(location.latitude, location.longitude)
+            pathPoints.value?.apply {
+                last().add(pos)
+                pathPoints.postValue(this)
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 package com.albar.runningtracker.other
 
+import android.graphics.Color
+
 object Constants {
     const val RUNNING_DATABASE_NAME = "running_db"
 
@@ -22,4 +24,11 @@ object Constants {
     // value for how many second the position will be updated
     const val LOCATION_UPDATE_INTERVAL = 5000L
     const val FASTEST_LOCATION_INTERVAL = 2000L
+
+    // Polyline Options
+    const val POLYLINE_COLOR = Color.RED
+    const val POLYLINE_WIDTH = 8f
+
+    // Camera zoom
+    const val MAP_ZOOM = 15f
 }
