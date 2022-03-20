@@ -1,5 +1,6 @@
 package com.albar.runningtracker.service
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
@@ -7,23 +8,63 @@ import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Context
 import android.content.Intent
+import android.location.Location
 import android.os.Build
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import com.albar.runningtracker.R
 import com.albar.runningtracker.other.Constants.ACTION_PAUSE_SERVICE
 import com.albar.runningtracker.other.Constants.ACTION_SHOW_TRACKING_FRAGMENT
 import com.albar.runningtracker.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.albar.runningtracker.other.Constants.ACTION_STOP_SERVICE
+import com.albar.runningtracker.other.Constants.FASTEST_LOCATION_INTERVAL
+import com.albar.runningtracker.other.Constants.LOCATION_UPDATE_INTERVAL
 import com.albar.runningtracker.other.Constants.NOTIFICATION_CHANNEL_ID
 import com.albar.runningtracker.other.Constants.NOTIFICATION_CHANNEL_NAME
 import com.albar.runningtracker.other.Constants.NOTIFICATION_ID
+import com.albar.runningtracker.other.TrackingUtility
 import com.albar.runningtracker.ui.MainActivity
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.maps.model.LatLng
 import timber.log.Timber
+
+typealias Polyline = MutableList<LatLng>
+typealias  Polylines = MutableList<Polyline>
 
 class TrackingService : LifecycleService() {
 
-    var isFirstRun = true
+    private var isFirstRun = true
+
+    // to get location update
+    lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    @SuppressLint("VisibleForTests")
+    override fun onCreate() {
+        super.onCreate()
+        postInitialValues()
+        fusedLocationProviderClient = FusedLocationProviderClient(this)
+
+        isTracking.observe(this, Observer {
+            updateLocationTracking(it)
+        })
+    }
+
+    companion object {
+        // MutableLive data to observe changes
+        // <MutableList< to save list of polyline
+        // <MutableList<LatLng> to save Lat Long coordinate in list
+        // val pathPoints = MutableLiveData<MutableList<MutableList<LatLng>>>()
+
+        val pathPoints = MutableLiveData<Polylines>()
+        val isTracking = MutableLiveData<Boolean>()
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
@@ -48,6 +89,10 @@ class TrackingService : LifecycleService() {
     }
 
     private fun startForegroundService() {
+        // add empty polyline
+        addEmptyPolyline()
+        isTracking.postValue(true)
+
         // create notif manager
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -85,5 +130,65 @@ class TrackingService : LifecycleService() {
             IMPORTANCE_LOW
         )
         notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun postInitialValues() {
+        isTracking.postValue(false) // postValue() -> update changes to background
+        pathPoints.postValue(mutableListOf())
+    }
+
+    // add emptyPolylines
+    private fun addEmptyPolyline() = pathPoints.value?.apply {
+        add(mutableListOf())
+        pathPoints.postValue(this)
+    }
+        ?: pathPoints.postValue(mutableListOf(mutableListOf())) // inside 1 add coordinate, second mutablelistof add polyline
+
+    // function to add coordinate on the last coordinate list
+    private fun addPathPoint(location: Location?) {
+        location?.let {
+            val pos = LatLng(location.latitude, location.longitude)
+            pathPoints.value?.apply {
+                last().add(pos)
+                pathPoints.postValue(this)
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun updateLocationTracking(isTracking: Boolean) {
+        if (isTracking) {
+            if (TrackingUtility.hasLocationPermission(this)) {
+                val request = LocationRequest().apply {
+                    // how often we get our location update
+                    interval = LOCATION_UPDATE_INTERVAL
+                    fastestInterval = FASTEST_LOCATION_INTERVAL
+                    priority = PRIORITY_HIGH_ACCURACY
+                }
+                fusedLocationProviderClient.requestLocationUpdates(
+                    request,
+                    locationCallback, //error due to we use easy permission
+                    Looper.getMainLooper()
+                )
+            }
+        } else {
+            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    // to request location updates whenever the location changes
+    // we can give the interval time as well
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            super.onLocationResult(result)
+            if (isTracking.value!!) {
+                result.locations.let { locations ->
+                    for (location in locations) {
+                        addPathPoint(location)
+                        Timber.d("New Location: ${location.latitude}, ${location.longitude}")
+                    }
+                }
+            }
+        }
     }
 }

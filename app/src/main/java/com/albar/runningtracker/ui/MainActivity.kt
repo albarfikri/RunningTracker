@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     private fun navigateToTrackingFragmentIfNeeded(intent: Intent?) {
         // check ACTION_SHOW_TRACKING_FRAGMENT in MainActivity
         if (intent?.action == ACTION_SHOW_TRACKING_FRAGMENT) {
