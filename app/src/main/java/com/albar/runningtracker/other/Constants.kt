@@ -31,4 +31,7 @@ object Constants {
 
     // Camera zoom
     const val MAP_ZOOM = 15f
+
+    // Timer update
+    const val TIMER_UPDATE_INTERVAL = 50L
 }

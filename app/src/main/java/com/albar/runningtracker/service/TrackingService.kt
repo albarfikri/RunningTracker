@@ -25,6 +25,7 @@ import com.albar.runningtracker.other.Constants.LOCATION_UPDATE_INTERVAL
 import com.albar.runningtracker.other.Constants.NOTIFICATION_CHANNEL_ID
 import com.albar.runningtracker.other.Constants.NOTIFICATION_CHANNEL_NAME
 import com.albar.runningtracker.other.Constants.NOTIFICATION_ID
+import com.albar.runningtracker.other.Constants.TIMER_UPDATE_INTERVAL
 import com.albar.runningtracker.other.TrackingUtility
 import com.albar.runningtracker.ui.MainActivity
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -33,6 +34,10 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 typealias Polyline = MutableList<LatLng>
@@ -45,6 +50,23 @@ class TrackingService : LifecycleService() {
     // to get location update
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
+    // creating live data to give time in second
+    private val timeRunInSeconds = MutableLiveData<Long>()
+
+
+    companion object {
+        // MutableLive data to observe changes
+        // <MutableList< to save list of polyline
+        // <MutableList<LatLng> to save Lat Long coordinate in list
+        // val pathPoints = MutableLiveData<MutableList<MutableList<LatLng>>>()
+
+        val pathPoints = MutableLiveData<Polylines>()
+        val isTracking = MutableLiveData<Boolean>()
+
+        // creating live data to give time in millis
+        val timeRunInMillis = MutableLiveData<Long>()
+    }
+
     @SuppressLint("VisibleForTests")
     override fun onCreate() {
         super.onCreate()
@@ -56,16 +78,6 @@ class TrackingService : LifecycleService() {
         })
     }
 
-    companion object {
-        // MutableLive data to observe changes
-        // <MutableList< to save list of polyline
-        // <MutableList<LatLng> to save Lat Long coordinate in list
-        // val pathPoints = MutableLiveData<MutableList<MutableList<LatLng>>>()
-
-        val pathPoints = MutableLiveData<Polylines>()
-        val isTracking = MutableLiveData<Boolean>()
-    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             when (it.action) {
@@ -74,7 +86,7 @@ class TrackingService : LifecycleService() {
                         startForegroundService()
                         isFirstRun = false
                     } else {
-                        startForegroundService()
+                        startTimer()
                         Timber.d("Resuming Service")
                     }
                 }
@@ -90,13 +102,41 @@ class TrackingService : LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
+    private var isTimerEnabled = false
+    private var lapTime = 0L
+    private var timeRun = 0L
+    private var timeStarted = 0L
+    private var lastSecondTimeStamp = 0L
+
+    private fun startTimer() {
+        // add empty polyline
+        addEmptyPolyline()
+        isTracking.postValue(true)
+        timeStarted = System.currentTimeMillis()
+        isTimerEnabled = true
+        CoroutineScope(Dispatchers.Main).launch {
+            while (isTracking.value!!) {
+                // time difference between now and timeStarted
+                lapTime = System.currentTimeMillis() - timeStarted
+                // Post the new lapTime
+                timeRunInMillis.postValue(timeRun + lapTime)
+                if (timeRunInMillis.value!! >= lastSecondTimeStamp + 1000L) {
+                    timeRunInSeconds.postValue(timeRunInSeconds.value!! + 1)
+                    lastSecondTimeStamp += 1000L
+                }
+                delay(TIMER_UPDATE_INTERVAL)
+            }
+            timeRun += lapTime // adding each lapTime once the user stop the stopwatch
+        }
+    }
+
     private fun pauseService() {
         isTracking.postValue(false)
+        isTimerEnabled = false
     }
 
     private fun startForegroundService() {
-        // add empty polyline
-        addEmptyPolyline()
+        startTimer()
         isTracking.postValue(true)
 
         // create notif manager
