@@ -14,6 +14,7 @@ import com.albar.runningtracker.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.albar.runningtracker.other.Constants.MAP_ZOOM
 import com.albar.runningtracker.other.Constants.POLYLINE_COLOR
 import com.albar.runningtracker.other.Constants.POLYLINE_WIDTH
+import com.albar.runningtracker.other.TrackingUtility
 import com.albar.runningtracker.service.Polyline
 import com.albar.runningtracker.service.TrackingService
 import com.albar.runningtracker.ui.viewmodels.MainViewModel
@@ -33,6 +34,8 @@ class TrackingFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var map: GoogleMap? = null
+
+    private var curTimeInMillis = 0L
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -69,6 +72,12 @@ class TrackingFragment : Fragment() {
             pathPoints = it
             addLatestPolyline()
             moveCameraToUser()
+        })
+
+        TrackingService.timeRunInMillis.observe(viewLifecycleOwner, Observer {
+            curTimeInMillis = it
+            val formattedTime = TrackingUtility.getFormattedStopWatchTime(curTimeInMillis, true)
+            binding.tvTimer.text = formattedTime
         })
     }
 
