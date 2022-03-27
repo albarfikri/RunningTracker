@@ -13,10 +13,10 @@ import javax.inject.Singleton
 
 @Module
 // Dependencies will be available in lifetime of particular activity
-@InstallIn(SingletonComponent::class)
+@InstallIn(SingletonComponent::class) // the previous version called ApplicationComponent
 object AppModule {
 
-    @Singleton
+    @Singleton // only a single instance created
     @Provides
     fun provideRunningDatabase(
         @ApplicationContext app: Context

@@ -15,7 +15,6 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import com.albar.runningtracker.R
 import com.albar.runningtracker.other.Constants.ACTION_PAUSE_SERVICE
 import com.albar.runningtracker.other.Constants.ACTION_SHOW_TRACKING_FRAGMENT
 import com.albar.runningtracker.other.Constants.ACTION_START_OR_RESUME_SERVICE
@@ -34,21 +33,28 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.maps.model.LatLng
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
 typealias Polyline = MutableList<LatLng>
 typealias Polylines = MutableList<Polyline>
 
+@AndroidEntryPoint
 class TrackingService : LifecycleService() {
 
     private var isFirstRun = true
 
     // to get location update
+    @Inject
     lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+    @Inject
+    lateinit var baseNotificationBuilder: NotificationCompat.Builder
 
     // creating live data to give time in second
     private val timeRunInSeconds = MutableLiveData<Long>()
@@ -147,27 +153,9 @@ class TrackingService : LifecycleService() {
             createNotificationChannel(notificationManager)
         }
 
-        // construct our notif
-        val notificationBuilder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setAutoCancel(false)
-            .setOngoing(true)
-            .setSmallIcon(R.drawable.ic_run)
-            .setContentTitle("Running App")
-            .setContentText("00:00:00")
-            .setContentIntent(getMainActivityPendingIntent())
-
         // launch foreground service
-        startForeground(NOTIFICATION_ID, notificationBuilder.build())
+        startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
     }
-
-    private fun getMainActivityPendingIntent() = PendingIntent.getActivity(
-        this,
-        0,
-        Intent(this, MainActivity::class.java).also {
-            it.action = ACTION_SHOW_TRACKING_FRAGMENT // will be send to main Activity
-        },
-        FLAG_UPDATE_CURRENT // if already exist it won't create a new notif instead updating it
-    )
 
     private fun createNotificationChannel(notificationManager: NotificationManager) {
         val channel = NotificationChannel(
