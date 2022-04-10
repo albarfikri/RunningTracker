@@ -102,6 +102,7 @@ class TrackingFragment : Fragment() {
     private fun stopRun() {
         sendCommandToService(ACTION_STOP_SERVICE)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
+        updateTracking(true)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
