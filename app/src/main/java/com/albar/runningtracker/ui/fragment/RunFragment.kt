@@ -138,4 +138,5 @@ class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         super.onDestroy()
         _binding = null
     }
+    
 }
