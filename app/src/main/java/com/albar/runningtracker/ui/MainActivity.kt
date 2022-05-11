@@ -1,6 +1,7 @@
 package com.albar.runningtracker.ui
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -8,8 +9,10 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.albar.runningtracker.R
 import com.albar.runningtracker.databinding.ActivityMainBinding
+import com.albar.runningtracker.other.Constants
 import com.albar.runningtracker.other.Constants.ACTION_SHOW_TRACKING_FRAGMENT
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -18,6 +21,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var _navHost: View
     private val navHost get() = _navHost
 
+    @Inject
+    lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         navigateToTrackingFragmentIfNeeded(intent)
 
         setSupportActionBar(binding.toolbar)
-
+        loadFieldsFromSharedPref()
         binding.apply {
             bottomNavigationView.setupWithNavController(navHost.findNavController())
             navHost.findNavController()
@@ -41,6 +46,12 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
         }
+    }
+
+    private fun loadFieldsFromSharedPref() {
+        val name = sharedPreferences.getString(Constants.KEY_NAME, "")
+        val toolbarText = "Let's go, $name!."
+        binding.tvToolbarTitle.text = toolbarText
     }
 
     private fun navigateToTrackingFragmentIfNeeded(intent: Intent?) {
