@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.albar.runningtracker.databinding.ItemRunBinding
 import com.albar.runningtracker.db.Run
 import com.albar.runningtracker.other.TrackingUtility
-import com.bumptech.glide.Glide
 import java.text.SimpleDateFormat
 import java.util.*
 
