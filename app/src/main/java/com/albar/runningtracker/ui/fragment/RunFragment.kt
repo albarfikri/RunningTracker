@@ -1,12 +1,14 @@
 package com.albar.runningtracker.ui.fragment
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -14,9 +16,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.albar.runningtracker.R
 import com.albar.runningtracker.adapters.RunAdapter
 import com.albar.runningtracker.databinding.FragmentRunBinding
+import com.albar.runningtracker.other.Constants
 import com.albar.runningtracker.other.Constants.REQUEST_CODE_LOCATION_PERMISSION
 import com.albar.runningtracker.other.SortType
 import com.albar.runningtracker.other.TrackingUtility
+import com.albar.runningtracker.service.TrackingService
 import com.albar.runningtracker.ui.viewmodels.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
@@ -76,14 +80,26 @@ class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
 
         viewModel.runs.observe(viewLifecycleOwner) {
-            runAdapter.submitList(it)
+            if (it != null) {
+                runAdapter.submitList(it)
+            }else{
+                Toast.makeText(requireActivity(), "Your running records !", Toast.LENGTH_SHORT).show()
+            }
+
         }
 
         binding.fab.setOnClickListener()
         {
+            sendCommandToService(Constants.ACTION_STARTED)
             findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
         }
     }
+
+    private fun sendCommandToService(action: String) =
+        Intent(requireContext(), TrackingService::class.java).also {
+            it.action = action
+            requireContext().startService(it)
+        }
 
     // Checking permissions with EasyPermissions
     private fun requestPermission() {

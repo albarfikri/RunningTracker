@@ -17,6 +17,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.albar.runningtracker.R
 import com.albar.runningtracker.other.Constants.ACTION_PAUSE_SERVICE
+import com.albar.runningtracker.other.Constants.ACTION_STARTED
 import com.albar.runningtracker.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.albar.runningtracker.other.Constants.ACTION_STOP_SERVICE
 import com.albar.runningtracker.other.Constants.FASTEST_LOCATION_INTERVAL
@@ -63,13 +64,10 @@ class TrackingService : LifecycleService() {
 
 
     companion object {
-        // MutableLive data to observe changes
-        // <MutableList< to save list of polyline
-        // <MutableList<LatLng> to save Lat Long coordinate in list
-        // val pathPoints = MutableLiveData<MutableList<MutableList<LatLng>>>()
 
         val pathPoints = MutableLiveData<Polylines>()
         val isTracking = MutableLiveData<Boolean>()
+        var isStartedTracking = MutableLiveData<Boolean>()
 
         // creating live data to give time in millis
         val timeRunInMillis = MutableLiveData<Long>()
@@ -119,6 +117,10 @@ class TrackingService : LifecycleService() {
                     Timber.d("Stopped service")
                     killedService()
                 }
+                ACTION_STARTED ->{
+                    isStartedTracking.postValue(true)
+                }
+
             }
         }
         return super.onStartCommand(intent, flags, startId)

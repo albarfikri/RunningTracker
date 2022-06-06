@@ -104,7 +104,6 @@ class TrackingFragment : Fragment() {
     private fun stopRun() {
         sendCommandToService(ACTION_STOP_SERVICE)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
-        updateTracking(true)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -143,6 +142,10 @@ class TrackingFragment : Fragment() {
             val formattedTime = TrackingUtility.getFormattedStopWatchTime(curTimeInMillis, true)
             binding.tvTimer.text = formattedTime
         })
+
+        TrackingService.isStartedTracking.observe(viewLifecycleOwner, Observer {
+            started()
+        })
     }
 
     // if toggleClicked
@@ -163,9 +166,14 @@ class TrackingFragment : Fragment() {
             binding.btnFinishRun.visibility = View.VISIBLE
         } else {
             binding.btnToggleRun.text = "Stop"
-            menu?.getItem(0)?.isVisible = true
             binding.btnFinishRun.visibility = View.GONE
+            menu?.getItem(0)?.isVisible = true
         }
+    }
+
+    private fun started() {
+        binding.btnToggleRun.text = "Start"
+        binding.btnFinishRun.visibility = View.GONE
     }
 
     // setting camera to move to user
@@ -292,4 +300,5 @@ class TrackingFragment : Fragment() {
         super.onSaveInstanceState(outState)
         binding.mapView.onSaveInstanceState(outState)
     }
+
 }
